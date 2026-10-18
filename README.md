@@ -6,6 +6,9 @@ Live app: https://postlens-social-analyser.omangagarwal.chatgpt.site
 
 ## Features
 
+- Dark Social Lens studio with a sticky link inspector, real summary cards, four workspace tabs and a responsive layout.
+- Filter evidence checks, sort candidate comparisons, export JSON/text, inspect request receipts and use a pre-publish checklist.
+
 - Import a YouTube link: title, description, tags, duration, views, likes and up to 50 relevance-ranked public comments.
 - Retrieve duration-matched search candidates and the channel’s recent uploads; inspect age, channel scale and engagement before comparing.
 - Generate a structured report with GPT-6 Luna, medium reasoning, using supplied text and the target thumbnail.
