@@ -1,0 +1,10 @@
+import type {AIReport} from './ai-report';
+export type AnalysisResult={report:AIReport,model:string,diagnosticId?:string,requestId?:string};
+export async function readAnalysis(response:Response,onProgress:(message:string)=>void):Promise<AnalysisResult>{
+ if(!response.ok){let message='Analysis service returned HTTP '+response.status+'. Please retry.';try{const j=await response.json() as {error?:string};if(j.error)message=j.error;}catch{}throw Error(message);}
+ if(!response.headers.get('content-type')?.includes('application/x-ndjson'))throw Error('The server returned an unexpected response. Refresh the page to load the latest version and retry.');
+ if(!response.body)throw Error('No analysis response was received. Please retry.');
+ const reader=response.body.getReader(),decoder=new TextDecoder();let buffer='',result:AnalysisResult|undefined;
+ const process=(line:string)=>{if(!line.trim())return;const event=JSON.parse(line);if(event.type==='status')onProgress(event.message+(event.elapsedSeconds?' · '+event.elapsedSeconds+'s elapsed':''));if(event.type==='error')throw Error(event.error+' [Diagnostic: '+event.diagnosticId+(event.requestId?'; OpenAI: '+event.requestId:'')+'; code: '+event.code+']');if(event.type==='result')result=event;};
+ try{while(!result){let timer:ReturnType<typeof setTimeout>|undefined;let chunk:ReadableStreamReadResult<Uint8Array>;try{chunk=await Promise.race([reader.read(),new Promise<never>((_resolve,reject)=>{timer=setTimeout(()=>reject(Error('No progress received for 90 seconds. The connection may have stopped. Retry and share the error if it repeats.')),90000);})]);}finally{if(timer)clearTimeout(timer);}buffer+=decoder.decode(chunk.value||new Uint8Array(),{stream:!chunk.done});let at;while((at=buffer.indexOf('\n'))!==-1){process(buffer.slice(0,at));buffer=buffer.slice(at+1);}if(chunk.done){if(buffer.trim())process(buffer);break;}}if(!result)throw Error('The analysis connection closed before a report was received. Please retry.');return result;}finally{await reader.cancel().catch(()=>{});}
+}

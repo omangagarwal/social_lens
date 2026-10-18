@@ -1,0 +1,4 @@
+import {env} from 'cloudflare:workers';
+import {parseLink} from '../../../lib/analyse';
+import {getComparison} from '../../../lib/youtube-comparison';
+export async function POST(req:Request){try{const b=await req.json() as {url?:string,query?:string};const p=parseLink(b.url||'');if(!p?.platform.startsWith('YouTube')||typeof b.query!=='string'||b.query.length>150)return Response.json({error:'Enter a YouTube link and a topic query of up to 150 characters.'},{status:400});const key=(env as unknown as {YOUTUBE_API_KEY?:string}).YOUTUBE_API_KEY;if(!key)return Response.json({error:'YouTube connection is missing.'},{status:503});const comparison=await getComparison(p.id,key,b.query);return Response.json({comparison},{headers:{'Cache-Control':'no-store'}});}catch{return Response.json({error:'Could not load comparisons. Check the video link or retry; YouTube may have limited the request.'},{status:502})}}
